@@ -2,9 +2,11 @@ package com.cabbooking.rkm;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 /**
@@ -16,7 +18,8 @@ public class DBHelper extends SQLiteOpenHelper
     /* Static Strings */
 
     public static final String DATABASE_NAME =  "CabBooking.db";
-
+    static final String AB = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static SecureRandom rnd = new SecureRandom();
     /**
         Users Table Definition
      */
@@ -156,8 +159,37 @@ public class DBHelper extends SQLiteOpenHelper
         ContentValues contentValues = new ContentValues();
     }
 
-public void Main()
-{
+    public String GenerateIdForTable( int len,String TableName,String ColumnName )
+    {
+        StringBuilder sb = new StringBuilder( len );
+        Boolean IsToIterate = true;
 
-}
+        while(IsToIterate) {
+            for (int i = 0; i < len; i++)
+            {
+                sb.append(AB.charAt(rnd.nextInt(AB.length())));
+            }
+
+            if (!IsIdExists(sb.toString(), TableName, ColumnName))
+            {
+                IsToIterate = false;
+                return sb.toString();
+            }
+        }
+        return sb.toString();
+    }
+
+    Boolean IsIdExists(String Id, String TableName, String ColumnName)
+    {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String Query =  "select * from "+ TableName +" where " + ColumnName + " = " + Id + "";
+        Cursor cursor = db.rawQuery(Query, null);
+
+        if(cursor.getCount() <= 0){
+            cursor.close();
+            return false;
+        }
+        cursor.close();
+        return true;
+    }
 }

@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by RamaKrishna Math Chennai on 09-09-2016.
@@ -24,7 +25,8 @@ public class DBHelper extends SQLiteOpenHelper
         Users Table Definition
      */
     public static final String USERS_TABLE = "Users";
-    public static final String USERS_COLUMN_ID = "GlobalUserId";
+    public static final String USERS_COLUMN_ID = "Id";
+    public static final String USERS_COLUMN_GlobalUserID = "GlobalUserId";
     public static final String USERS_COLUMN_NAME = "Name";
     public static final String USERS_COLUMN_EMAIL = "Email";
     public static final String USERS_COLUMN_PASSWORD = "Password";
@@ -129,7 +131,7 @@ public class DBHelper extends SQLiteOpenHelper
 
     public static final String USERS_TABLE_SQL =  "create table Users " +
             " ( " +
-            "GlobalUserId text primary key,Name text, Email text,Mobile text,Password text, UserRoleId text,IsAvailable boolean" +
+            "Id integer primary key, GlobalUserId text,Name text, Email text,Mobile text,Password text, UserRoleId text,IsAvailable boolean" +
             " ) " ;
 
    /* public static final String BOOKING_TABLE_SQL =  "create table Booking " +
@@ -153,13 +155,39 @@ public class DBHelper extends SQLiteOpenHelper
 
     }
 
-    public void InsertUsers()
+    public void AddUser(Users User)
     {
         SQLiteDatabase db = this.getWritableDatabase();
+
         ContentValues contentValues = new ContentValues();
+        contentValues.put("GlobalUserId",GenerateIdForTable(2,USERS_TABLE,USERS_COLUMN_ID));
+        contentValues.put("Name",User.getName());
+        contentValues.put("Email",User.getEmail());
+        contentValues.put("Password",User.getPassword());
+        contentValues.put("MobileNumber",User.getMobileNumber());
+        contentValues.put("IsAvailable",User.getIsAvailable());
+        contentValues.put("UserRoleId",User.getUserRoleId());
+        db.insert(USERS_TABLE,null,contentValues);
+        db.close();
     }
 
-    public String GenerateIdForTable( int len,String TableName,String ColumnName )
+    public Users GetUser(String GlobalUserId)
+    {
+        SQLiteDatabase db  =  this.getReadableDatabase();
+
+        Cursor cursor = db.query(USERS_TABLE,
+                new String[]{"GlobalUserId","Name","Email","MobileNumber","IsAvailable","UserRoleId"},"GlobalUserId=?",
+                new String []{String.valueOf(GlobalUserId)},null,null,null,null);
+        if (cursor != null)
+            cursor.moveToFirst();
+
+        Users user = new Users(cursor.getString(1),cursor.getString(2),cursor.getString(2),"",cursor.getString(4),cursor.getString(5),(cursor.getInt(6)== 1)?true:false);
+
+        return user;
+
+    }
+
+   public String GenerateIdForTable( int len,String TableName,String ColumnName )
     {
         StringBuilder sb = new StringBuilder( len );
         Boolean IsToIterate = true;
@@ -179,13 +207,14 @@ public class DBHelper extends SQLiteOpenHelper
         return sb.toString();
     }
 
-    Boolean IsIdExists(String Id, String TableName, String ColumnName)
+    Boolean IsIdExists(String GlobalUserId, String TableName, String ColumnName)
     {
         SQLiteDatabase db = this.getReadableDatabase();
-        String Query =  "select * from "+ TableName +" where " + ColumnName + " = " + Id + "";
-        Cursor cursor = db.rawQuery(Query, null);
+        String Query =  "select * from "+ TableName +" where " + ColumnName + " =?";
+        Cursor cursor = db.rawQuery(Query, new String[]{String.valueOf(GlobalUserId)});
 
-        if(cursor.getCount() <= 0){
+        if(cursor.getCount() <= 0)
+        {
             cursor.close();
             return false;
         }
